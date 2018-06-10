@@ -29,10 +29,10 @@ app = Flask(__name__)
 # Read in ground truth map and create 3-channel green version for overplotting
 # NOTE: images are read in by default with the origin (0, 0) in the upper left
 # and y-axis increasing downward.
-ground_truth = mpimg.imread('../calibration_images/map_bw.png')
+ground_truth = mpimg.imread('../calibration_images/map_bw.pn')
 # This next line creates arrays of zeros in the red and blue channels
 # and puts the map into the green channel.  This is why the underlying 
-# map output looks green in the display image
+# map output looks green in the C:\Users\salabs\RoboND-Rover-Project\calibration_imagesdisplay image
 ground_truth_3d = np.dstack((ground_truth*0, ground_truth*255, ground_truth*0)).astype(np.float)
 
 # Define RoverState() class to retain rover state parameters
@@ -41,6 +41,7 @@ class RoverState():
         self.start_time = None # To record the start time of navigation
         self.total_time = None # To record total duration of naviagation
         self.img = None # Current camera image
+        self.start_pos = None # Current position (x, y) of the starting location
         self.pos = None # Current position (x, y)
         self.yaw = None # Current yaw angle
         self.pitch = None # Current pitch angle
@@ -70,13 +71,23 @@ class RoverState():
         # Update this image with the positions of navigable terrain
         # obstacles and rock samples
         self.worldmap = np.zeros((200, 200, 3), dtype=np.float) 
+        self.sample_seen =  False # Change to True if sample detected
         self.samples_pos = None # To store the actual sample positions
         self.samples_to_find = 0 # To store the initial count of samples
         self.samples_located = 0 # To store number of samples located on map
         self.samples_collected = 0 # To count the number of samples collected
+        self.samples_found = 0 # To count the number of sample found
+        self.sample_max_search = 30 # maximum second allowed to get seen sample 
+        sample_timer = time.time()
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
+        self.rock_angle = [] # Track the angle to the sample
+        self.rock_dist = [] # Track the distance to the sample
+        self.max_wheel_lock = 10 # set maximum secs for wheels can be locked
+        self.wheel_lock = time.time() #Time the wheels fully turned
+        self.max_stuck = 3 #set maximum allowed sec for rover to not move
+        self.stuck_time = time.time() # Time with no velocity but throotle
 # Initialize our rover 
 Rover = RoverState()
 
